@@ -2,10 +2,10 @@ pipeline {
   agent { label 'unit-test' }
 
   environment {
-    CI_IMAGE_NAME   = 'reports-pytest'
+    CI_IMAGE_NAME   = 'report-pytest'
     APP_IMAGE_NAME  = 'ale175/service-report'
     DOCKERHUB_CREDS = 'dockerhub-creds'
-    INTEGRATION_JOB = 'peer-report-pipeline/integration-repo/main' // <— ADATTA a come si chiama da te
+    INTEGRATION_JOB = 'peer-review-pipeline/integration-repo/main' // <— ADATTA a come si chiama da te
   }
 
   stages {
