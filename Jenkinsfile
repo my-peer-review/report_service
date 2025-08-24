@@ -48,10 +48,9 @@ pipeline {
       }
       steps {
         script {
-          // Attendi il job di integrazione e propaga lo stato:
           build job: INTEGRATION_JOB,
-                wait: true,                // <— aspetta che finisca
-                propagate: true,           // <— se fallisce, fallisce anche questa pipeline
+                wait: true,
+                propagate: true,
                 parameters: [
                   string(name: 'SERVICE_NAME', value: 'report'),
                   string(name: 'TRIGGER_TYPE', value: 'single')
