@@ -2,10 +2,10 @@ pipeline {
   agent { label 'unit-test' }
 
   environment {
-    CI_IMAGE_NAME   = 'reviews-pytest'
-    APP_IMAGE_NAME  = 'ale175/service-review'
+    CI_IMAGE_NAME   = 'report-pytest'
+    APP_IMAGE_NAME  = 'ale175/service-report'
     DOCKERHUB_CREDS = 'dockerhub-creds'
-    INTEGRATION_JOB = 'peer-review-pipeline/integration-repo/main' // <— ADATTA a come si chiama da te
+    INTEGRATION_JOB = 'peer-review-pipeline/integration-repo/main' 
   }
 
   stages {
@@ -48,12 +48,11 @@ pipeline {
       }
       steps {
         script {
-          // Attendi il job di integrazione e propaga lo stato:
           build job: INTEGRATION_JOB,
-                wait: true,                // <— aspetta che finisca
-                propagate: true,           // <— se fallisce, fallisce anche questa pipeline
+                wait: true,
+                propagate: true,
                 parameters: [
-                  string(name: 'SERVICE_NAME', value: 'review'),
+                  string(name: 'SERVICE_NAME', value: 'report'),
                   string(name: 'TRIGGER_TYPE', value: 'single')
                 ]
         }
