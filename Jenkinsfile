@@ -5,7 +5,7 @@ pipeline {
     CI_IMAGE_NAME   = 'report-pytest'
     APP_IMAGE_NAME  = 'ale175/service-report'
     DOCKERHUB_CREDS = 'dockerhub-creds'
-    INTEGRATION_JOB = 'peer-review-pipeline/integration-repo/main' 
+    INTEGRATION_JOB = 'peer-review-pipeline/integration-repo/main'
   }
 
   stages {
@@ -22,18 +22,24 @@ pipeline {
       }
     }
 
-    stage('Build & Push :latest (PR→main)') {
-      when {
-        allOf {
-          changeRequest()
-          expression { return env.CHANGE_TARGET == 'main' }
-        }
-      }
+    stage('Build app image (:test)') {
       steps {
         script {
+          docker.build("${APP_IMAGE_NAME}:test", "-f Dockerfile .")
+        }
+      }
+    }
+
+    stage('Push immagini di test (prima dell\'integrazione)') {
+      steps {
+        script {
+          def shortSha = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : env.BUILD_NUMBER
           docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDS) {
-            def appImage = docker.build("${APP_IMAGE_NAME}", "-f Dockerfile .")
-            appImage.push("latest")
+            // tag addizionale "test-<shortSha>" per tracciabilità
+            sh "docker tag ${APP_IMAGE_NAME}:test ${APP_IMAGE_NAME}:test-${shortSha}"
+            // push di ENTRAMBI i tag di test
+            docker.image("${APP_IMAGE_NAME}:test").push()
+            docker.image("${APP_IMAGE_NAME}:test-${shortSha}").push()
           }
         }
       }
@@ -61,12 +67,23 @@ pipeline {
   }
 
   post {
-    success { echo '✅ OK: unit, push (se PR→main) e integrazione passati.' }
-    failure { echo '❌ KO: controlla i log (unit/push/integrazione).' }
-    always  {
+    success {
+      echo '✅ OK: unit, push test, e integrazione (se PR→main) passati. Pubblico :last...'
+      script {
+        docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDS) {
+          // retag dell'immagine test come "last" e push
+          sh "docker tag ${APP_IMAGE_NAME}:test ${APP_IMAGE_NAME}:last"
+          docker.image("${APP_IMAGE_NAME}:last").push()
+        }
+      }
+    }
+    failure {
+      echo '❌ KO: controlla i log (unit/build/push/integrazione).'
+    }
+    always {
       sh '''
         rm -rf .pytest_cache || true
-        sh sudo chown -R $(id -u):$(id -g) . || true
+        sudo chown -R $(id -u):$(id -g) . || true
       '''
       deleteDir()
     }
