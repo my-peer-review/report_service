@@ -1,10 +1,8 @@
 import pytest
-import asyncio
 
 from app.services.report_service import ReportService
 from app.schemas.context import UserContext
 
-# Fake repository con metodi minimi
 class FakeReportRepo:
     async def get_report_assignments(self):
         return [{"teacherId": "t1", "assignments_aperti": 2, "assignments_completati": 3}]
